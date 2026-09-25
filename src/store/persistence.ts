@@ -1,13 +1,13 @@
 import { removePersistedKey } from './create-store';
 
-import { AUTH_STORAGE_KEY } from './auth';
-import { USER_STORAGE_KEY, userStore } from './user';
-import { ROADMAP_STORAGE_KEY, roadmapStore } from './roadmap';
 import { ASSESSMENT_STORAGE_KEY, assessmentStore } from './assessment';
+import { assistantStore } from './assistant';
+import { AUTH_STORAGE_KEY } from './auth';
+import { communityStore } from './community';
+import { ROADMAP_STORAGE_KEY, roadmapStore } from './roadmap';
 import { SAVED_STORAGE_KEY, savedStore } from './saved';
 import { SETTINGS_STORAGE_KEY, settingsStore } from './settings';
-import { assistantStore } from './assistant';
-import { communityStore } from './community';
+import { USER_STORAGE_KEY, userStore } from './user';
 
 /** Persisted storage keys for user-specific data. */
 const USER_DATA_KEYS = [
@@ -33,7 +33,7 @@ function resetInMemory() {
 /**
  * Clear user-specific data on logout — both in-memory state AND the persisted
  * keys — so a fresh login/signup on the same device never rehydrates the
- * previous user's data. Auth state is cleared via `authStore.logOut()` after
+ * previous user's data. Auth state is cleared via `authStore.signOut()` after
  * this returns.
  */
 export async function clearUserData(): Promise<void> {

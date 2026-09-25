@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
+import { DefaultTheme, DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -6,22 +6,38 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AIAssistantButton } from '@/components/layout/assistant-button';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { authStore } from '@/store';
+import { authStore, useHydration } from '@/store';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const hydrated = useHydration();
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {});
     // Initialize Supabase auth listener
     authStore.init();
   }, []);
 
+  useEffect(() => {
+    if (hydrated) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [hydrated]);
+
   const onLayoutRootView = useCallback(() => {
-    SplashScreen.hideAsync().catch(() => {});
-  }, []);
+    if (hydrated) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [hydrated]);
+
+  if (!hydrated) {
+    return (
+      <SafeAreaProvider>
+        <View style={styles.root} />
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider onLayout={onLayoutRootView}>

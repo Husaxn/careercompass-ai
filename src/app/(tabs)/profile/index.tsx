@@ -11,7 +11,7 @@ export default function ProfileScreen() {
     // accounts, then clear the auth session and reset the navigation stack to
     // the Login screen so back cannot return into the authenticated app.
     clearUserData().finally(() => {
-      authStore.logOut();
+      authStore.signOut();
       router.replace('/login');
     });
   };

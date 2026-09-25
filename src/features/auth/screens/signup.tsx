@@ -17,6 +17,7 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const canCreateAccount =
@@ -80,14 +81,27 @@ export default function Signup() {
 
         <View style={styles.fieldGroup}>
           <ThemedText type="smallBold">Password</ThemedText>
-          <TextInput
-            style={[styles.input, { borderColor: theme.backgroundElement, color: theme.text }]}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholder="••••••••"
-            placeholderTextColor={theme.textSecondary}
-          />
+          <View style={[styles.inputContainer, { borderColor: theme.backgroundElement }]}>
+            <TextInput
+              style={[styles.input, { color: theme.text }]}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              placeholder="••••••••"
+              placeholderTextColor={theme.textSecondary}
+            />
+            <Pressable
+              onPress={() => setShowPassword((visible) => !visible)}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              style={styles.visibilityButton}>
+              <SymbolView
+                name={showPassword ? 'eye.slash' : 'eye'}
+                size={20}
+                tintColor={theme.textSecondary}
+              />
+            </Pressable>
+          </View>
         </View>
 
         <Pressable
@@ -144,10 +158,18 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: Spacing.two,
     padding: Spacing.three,
     fontSize: 16,
+    flex: 1,
+  },
+  inputContainer: {
+    borderWidth: 1,
+    borderRadius: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  visibilityButton: {
+    padding: Spacing.three,
   },
   button: {
     alignItems: 'center',

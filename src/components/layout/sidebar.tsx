@@ -1,5 +1,5 @@
-import { SymbolView } from 'expo-symbols';
 import { Link, usePathname } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -58,17 +58,19 @@ export function Sidebar() {
                   ]),
                   pressed && styles.pressed,
                 ]}>
-                <SymbolView
-                  name={item.icon}
-                  size={18}
-                  weight={active ? 'bold' : 'regular'}
-                  tintColor={active ? colors.brand : colors.textSecondary}
-                />
-                <ThemedText
-                  type={active ? 'captionBold' : 'caption'}
-                  themeColor={active ? 'brand' : 'textSecondary'}>
-                  {item.label}
-                </ThemedText>
+                <View style={styles.itemContent}>
+                  <SymbolView
+                    name={item.icon}
+                    size={18}
+                    weight={active ? 'bold' : 'regular'}
+                    tintColor={active ? colors.brand : colors.textSecondary}
+                  />
+                  <ThemedText
+                    type={active ? 'captionBold' : 'caption'}
+                    themeColor={active ? 'brand' : 'textSecondary'}>
+                    {item.label}
+                  </ThemedText>
+                </View>
               </Pressable>
             </Link>
           );
@@ -95,12 +97,16 @@ const styles = StyleSheet.create({
   },
   link: {},
   linkInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
+    width: '100%',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.two,
+  },
+  itemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+    gap: Spacing.two,
   },
   pressed: {
     opacity: 0.7,

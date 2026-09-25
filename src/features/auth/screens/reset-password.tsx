@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -14,6 +15,8 @@ export default function ResetPassword() {
   const { updatePassword, isLoading } = authStore;
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSavePassword = async () => {
     if (!password || !confirm) {
@@ -46,19 +49,32 @@ export default function ResetPassword() {
         <ThemedText themeColor="textSecondary">Choose a new password for your account.</ThemedText>
 
         {[
-          { label: 'New password', value: password, onChange: setPassword },
-          { label: 'Confirm password', value: confirm, onChange: setConfirm },
+          { label: 'New password', value: password, onChange: setPassword, visible: showPassword, toggle: setShowPassword },
+          { label: 'Confirm password', value: confirm, onChange: setConfirm, visible: showConfirm, toggle: setShowConfirm },
         ].map((field) => (
           <View key={field.label} style={styles.fieldGroup}>
             <ThemedText type="smallBold">{field.label}</ThemedText>
-            <TextInput
-              style={[styles.input, { borderColor: theme.backgroundElement, color: theme.text }]}
-              value={field.value}
-              onChangeText={field.onChange}
-              secureTextEntry
-              placeholder="••••••••"
-              placeholderTextColor={theme.textSecondary}
-            />
+            <View style={[styles.inputContainer, { borderColor: theme.backgroundElement }]}>
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                value={field.value}
+                onChangeText={field.onChange}
+                secureTextEntry={!field.visible}
+                placeholder="••••••••"
+                placeholderTextColor={theme.textSecondary}
+              />
+              <Pressable
+                onPress={() => field.toggle((visible) => !visible)}
+                accessibilityRole="button"
+                accessibilityLabel={field.visible ? `Hide ${field.label.toLowerCase()}` : `Show ${field.label.toLowerCase()}`}
+                style={styles.visibilityButton}>
+                <SymbolView
+                  name={field.visible ? 'eye.slash' : 'eye'}
+                  size={20}
+                  tintColor={theme.textSecondary}
+                />
+              </Pressable>
+            </View>
           </View>
         ))}
 
@@ -86,10 +102,18 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: Spacing.two,
     padding: Spacing.three,
     fontSize: 16,
+    flex: 1,
+  },
+  inputContainer: {
+    borderWidth: 1,
+    borderRadius: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  visibilityButton: {
+    padding: Spacing.three,
   },
   button: {
     alignItems: 'center',

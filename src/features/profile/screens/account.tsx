@@ -21,7 +21,7 @@ export default function Account() {
     // Mirror Profile logout: clear in-memory + persisted user data, then the
     // auth session, then reset navigation so back can't re-enter the app.
     clearUserData().finally(() => {
-      authStore.logOut();
+      authStore.signOut();
       router.replace('/login');
     });
   };
