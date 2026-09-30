@@ -20,41 +20,39 @@ export interface AssistantContext {
   nextMilestone?: string;
 }
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.example.com';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-interface AgentReply {
-  reply?: string;
-  message?: string;
-  text?: string;
-}
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 
-/**
- * Send a chat message to the AI agent with app context and return its reply.
- * Falls back to a context-aware local response when no backend is configured so
- * the chat still works end-to-end.
- */
 export async function sendMessage(
   message: string,
   context: AssistantContext,
 ): Promise<string> {
+  if (!API_KEY) {
+    console.warn("No EXPO_PUBLIC_GEMINI_API_KEY provided, falling back to local mock.");
+    return buildLocalReply(message, context);
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}/assistant`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, context }),
-    });
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    if (!response.ok) {
-      throw new Error(`Assistant request failed with status ${response.status}`);
-    }
+    const milestone = context.nextMilestone ?? 'current milestone';
+    const systemPrompt = `You are an AI career mentor for the CareerCompass AI app. 
+Here is the user's current context:
+- Screen: ${context.screen}
+- Assessment Completed: ${context.assessmentCompleted}
+- Top Career Match: ${context.topCareer || 'None yet'}
+- Roadmap Progress: ${context.roadmapCompleted}/${context.roadmapTotal}
+- Next Milestone: ${milestone}
 
-    const data = (await response.json()) as AgentReply;
-    return data.reply ?? data.message ?? data.text ?? '';
+Please provide a helpful, concise, and friendly response based on this context.`;
+
+    const result = await model.generateContent(`${systemPrompt}\n\nUser: ${message}`);
+    return result.response.text();
   } catch (error) {
-    if (API_BASE_URL === 'https://api.example.com') {
-      return buildLocalReply(message, context);
-    }
-    throw error;
+    console.error("Gemini assistant error:", error);
+    return buildLocalReply(message, context);
   }
 }
 

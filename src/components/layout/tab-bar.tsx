@@ -14,20 +14,26 @@ type SymbolName = ComponentProps<typeof SymbolView>['name'];
 type NavItem = {
   href:
     | '/home'
-    | '/recommendations'
+    | '/profile'
+    | '/resume-analyzer'
+    | '/skill-assessment'
+    | '/skill-gap'
+    | '/job-matcher'
     | '/roadmap'
-    | '/community'
-    | '/profile';
+    | '/projects'
+    | '/interview-practice'
+    | '/github-analyzer'
+    | '/certificates';
   label: string;
   icon: SymbolName;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/home', label: 'Home', icon: { ios: 'house.fill', android: 'home', web: 'home' } },
-  { href: '/recommendations', label: 'Recommendations', icon: { ios: 'star.fill', android: 'star', web: 'star' } },
-  { href: '/roadmap', label: 'Roadmap', icon: { ios: 'map.fill', android: 'map', web: 'map' } },
-  { href: '/community', label: 'Community', icon: { ios: 'person.2.fill', android: 'group', web: 'group' } },
+  { href: '/home', label: 'Dashboard', icon: { ios: 'square.grid.2x2.fill', android: 'dashboard', web: 'dashboard' } },
   { href: '/profile', label: 'Profile', icon: { ios: 'person.crop.circle.fill', android: 'person', web: 'person' } },
+  { href: '/resume-analyzer', label: 'Resume Analyzer', icon: { ios: 'doc.text.magnifyingglass', android: 'find_in_page', web: 'find_in_page' } },
+  { href: '/skill-assessment', label: 'Skill Assessment', icon: { ios: 'checkmark.seal.fill', android: 'verified', web: 'verified' } },
+  { href: '/roadmap', label: 'Roadmap', icon: { ios: 'map.fill', android: 'map', web: 'map' } },
 ];
 
 export const TAB_BAR_HEIGHT = 64;

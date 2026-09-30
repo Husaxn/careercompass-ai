@@ -1,28 +1,18 @@
+import { GoogleGenerativeAI, Schema, Type } from '@google/generative-ai';
+
 /**
- * Analyzer service — talks to the backend AI endpoint.
- *
- * A single analysis source model is used regardless of what kind of source is
- * being analyzed (document, resume, image, or screen/session data), so the rest
- * of the feature never needs to branch on source type.
+ * Analyzer service — talks to Gemini API directly.
  */
 
 export type SourceKind = 'document' | 'resume' | 'image' | 'screen' | 'session';
 
-/**
- * Discriminated union describing the source submitted for analysis.
- * Keep this closed to the analyzer feature; the backend decides how each kind
- * is processed.
- */
 export type AnalysisSource =
   | { kind: 'document' | 'resume'; fileName: string; content: string | Blob }
   | { kind: 'image'; uri: string }
   | { kind: 'screen' | 'session'; data: Record<string, unknown> };
 
-/** Response returned by `POST /analysis` after a source is submitted. */
 export interface SubmittedAnalysis {
-  /** Identifier to poll for the finished result. */
   id: string;
-  /** Status returned by the backend (e.g. `queued` / `processing`). */
   status: 'queued' | 'processing';
 }
 
@@ -36,102 +26,69 @@ export interface AnalysisResult {
   createdAt: string;
 }
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.example.com';
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => '');
-    throw new Error(
-      message || `Request failed with status ${response.status} (${response.statusText})`,
-    );
-  }
-
-  return (await response.json()) as T;
-}
-
-function toFormBody(source: AnalysisSource): FormData | string {
-  if (source.kind === 'image') {
-    const form = new FormData();
-    form.append('kind', source.kind);
-    // React Native expects { uri, name, type } objects; web accepts a Blob/File.
-    form.append('file', { uri: source.uri, name: `source-${Date.now()}`, type: 'image/*' } as unknown as Blob);
-    return form;
-  }
-
-  if (source.kind === 'document' || source.kind === 'resume') {
-    const form = new FormData();
-    form.append('kind', source.kind);
-    form.append('fileName', source.fileName);
-    form.append('content', source.content as Blob);
-    return form;
-  }
-
-  if (source.kind === 'screen' || source.kind === 'session') {
-    return JSON.stringify({
-      kind: source.kind,
-      data: source.data,
-    });
-  }
-
-  throw new Error(`Unsupported source kind: ${(source as { kind?: string }).kind}`);
-}
-
-/** Submit a source (document, resume, image, or screen/session data). */
 export async function submitSource(source: AnalysisSource): Promise<SubmittedAnalysis> {
-  const body = toFormBody(source);
-  const headers: Record<string, string> = {};
-
-  if (typeof body === 'string') {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  const response = await fetch(`${API_BASE_URL}/analysis`, {
-    method: 'POST',
-    headers,
-    body,
-  });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => '');
-    throw new Error(
-      message || `Failed to submit analysis with status ${response.status} (${response.statusText})`,
-    );
-  }
-
-  return (await response.json()) as SubmittedAnalysis;
+  // Directly returning a mock processing ID as we will await it immediately
+  return { id: `gemini-${Date.now()}`, status: 'processing' };
 }
 
-/** Fetch the finished analysis result for a submitted source. */
 export async function fetchAnalysis(id: string): Promise<AnalysisResult> {
-  return request<AnalysisResult>(`/analysis/${encodeURIComponent(id)}`);
+  throw new Error("Polling is not implemented. Use analyzeSource directly.");
 }
 
-/**
- * Convenience that submits a source and then fetches its result.
- * The backend is expected to resolve by the time the result is fetched; if you
- * need polling, call `submitSource` + `fetchAnalysis` directly.
- *
- * When the backend is unreachable (e.g. no `EXPO_PUBLIC_API_URL` configured),
- * falls back to a local analysis so the flow still produces real, parsed
- * output instead of failing silently.
- */
+function contentText(source: AnalysisSource): string {
+  if (source.kind === 'resume' || source.kind === 'document') {
+    if (typeof source.content === 'string') return source.content;
+  }
+  if (source.kind === 'image') return `image uri: ${source.uri}`;
+  if (source.kind === 'screen' || source.kind === 'session') {
+    return JSON.stringify(source.data);
+  }
+  return '';
+}
+
 export async function analyzeSource(source: AnalysisSource): Promise<AnalysisResult> {
+  if (!API_KEY) {
+    console.warn("No EXPO_PUBLIC_GEMINI_API_KEY provided, falling back to local mock.");
+    return buildLocalAnalysis(source);
+  }
+
   try {
-    const { id } = await submitSource(source);
-    return await fetchAnalysis(id);
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          topMatch: { type: Type.STRING },
+          matchScore: { type: Type.NUMBER },
+          strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+          gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+          roadmap: { type: Type.ARRAY, items: { type: Type.STRING } },
+        },
+        required: ["topMatch", "matchScore", "strengths", "gaps", "roadmap"],
+      }
+    }});
+
+    const text = contentText(source);
+    const prompt = `Analyze the following user data/resume and provide a structured career analysis. Provide the top matched career, match score (0-100), key strengths, skill gaps, and a step-by-step roadmap.\n\nSource Data:\n${text}`;
+
+    const result = await model.generateContent(prompt);
+    const data = JSON.parse(result.response.text());
+
+    return {
+      id: `analysis-${Date.now()}`,
+      topMatch: data.topMatch,
+      matchScore: data.matchScore,
+      strengths: data.strengths,
+      gaps: data.gaps,
+      roadmap: data.roadmap,
+      createdAt: new Date().toISOString(),
+    };
   } catch (error) {
-    if (API_BASE_URL === 'https://api.example.com') {
-      return buildLocalAnalysis(source);
-    }
-    throw error;
+    console.error("Gemini analysis error:", error);
+    return buildLocalAnalysis(source);
   }
 }
 
@@ -148,20 +105,8 @@ const KEYWORD_MAP: [string, string, string[]][] = [
   ['node', 'Full-Stack Developer', ['Node', 'APIs', 'Backend basics']],
 ];
 
-function contentText(source: AnalysisSource): string {
-  if (source.kind === 'resume' || source.kind === 'document') {
-    if (typeof source.content === 'string') return source.content.toLowerCase();
-  }
-  if (source.kind === 'image') return `image ${source.uri}`.toLowerCase();
-  if (source.kind === 'screen' || source.kind === 'session') {
-    return Object.keys(source.data).join(' ').toLowerCase();
-  }
-  return '';
-}
-
-/** Produce a deterministic, content-aware analysis when no backend is available. */
 function buildLocalAnalysis(source: AnalysisSource): AnalysisResult {
-  const text = contentText(source);
+  const text = contentText(source).toLowerCase();
   const hits = KEYWORD_MAP.filter(([keyword]) => text.includes(keyword));
 
   const [topMatch, baseStrengths] = hits[0] ?? ['Frontend Engineer', ['Communication', 'Problem solving', 'Attention to detail']];

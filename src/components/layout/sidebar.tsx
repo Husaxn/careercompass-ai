@@ -1,114 +1,132 @@
 import { Link, usePathname } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import type { ComponentProps } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ScrollView, Platform, TouchableOpacity } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Spacing } from '@/constants/theme';
 
 type SymbolName = ComponentProps<typeof SymbolView>['name'];
 
 type NavItem = {
-  href:
-    | '/home'
-    | '/recommendations'
-    | '/roadmap'
-    | '/community'
-    | '/profile';
+  href: string;
   label: string;
   icon: SymbolName;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/home', label: 'Home', icon: { ios: 'house.fill', android: 'home', web: 'home' } },
-  { href: '/recommendations', label: 'Recommendations', icon: { ios: 'star.fill', android: 'star', web: 'star' } },
-  { href: '/roadmap', label: 'Roadmap', icon: { ios: 'map.fill', android: 'map', web: 'map' } },
-  { href: '/community', label: 'Community', icon: { ios: 'person.2.fill', android: 'group', web: 'group' } },
-  { href: '/profile', label: 'Profile', icon: { ios: 'person.crop.circle.fill', android: 'person', web: 'person' } },
+  { href: '/home', label: 'Dashboard', icon: 'square.grid.2x2' as SymbolName },
+  { href: '/profile', label: 'Profile', icon: 'person' as SymbolName },
+  { href: '/resume-analyzer', label: 'Resume Analyzer', icon: 'doc.text.magnifyingglass' as SymbolName },
+  { href: '/skill-assessment', label: 'Skill Assessment', icon: 'list.clipboard' as SymbolName },
+  { href: '/skill-gap', label: 'Skill Gap', icon: 'chart.bar' as SymbolName },
+  { href: '/job-matcher', label: 'Job Matcher', icon: 'briefcase' as SymbolName },
+  { href: '/roadmap', label: 'Roadmap', icon: 'map' as SymbolName },
+  { href: '/projects', label: 'Projects', icon: 'folder' as SymbolName },
+  { href: '/interview-practice', label: 'Interview Practice', icon: 'mic' as SymbolName },
+  { href: '/github-analyzer', label: 'GitHub Analyzer', icon: 'chevron.left.forwardslash.chevron.right' as SymbolName },
+  { href: '/certificates', label: 'Certificates', icon: 'rosette' as SymbolName },
 ];
 
-/**
- * Persistent web navigation rail. Rendered only on web by the tabs layout;
- * mobile uses `TabBar` instead.
- */
 export function Sidebar() {
   const pathname = usePathname();
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
   return (
-    <ThemedView type="backgroundElement" style={styles.root}>
-      <ThemedText type="captionBold" style={styles.brand}>
-        CareerCompass
-      </ThemedText>
+    <View style={styles.sidebar}>
+      <View style={styles.sidebarHeader}>
+        <View style={styles.logoCircle}>
+          <ThemedText style={styles.logoText}>S</ThemedText>
+        </View>
+        <View>
+          <ThemedText style={styles.brandName}>CareerCompass</ThemedText>
+          <ThemedText style={styles.brandTagline}>Your Career Copilot</ThemedText>
+        </View>
+      </View>
 
-      <View style={styles.nav}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sidebarNav}>
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href;
           return (
-            <Link key={item.href} href={item.href} style={styles.link} asChild>
-              <Pressable
-                accessibilityRole="link"
-                style={({ pressed }) => [
-                  StyleSheet.flatten([
-                    styles.linkInner,
-                    active && { backgroundColor: colors.backgroundSelected },
-                  ]),
-                  pressed && styles.pressed,
-                ]}>
-                <View style={styles.itemContent}>
-                  <SymbolView
-                    name={item.icon}
-                    size={18}
-                    weight={active ? 'bold' : 'regular'}
-                    tintColor={active ? colors.brand : colors.textSecondary}
-                  />
-                  <ThemedText
-                    type={active ? 'captionBold' : 'caption'}
-                    themeColor={active ? 'brand' : 'textSecondary'}>
-                    {item.label}
-                  </ThemedText>
-                </View>
-              </Pressable>
+            <Link key={item.href} href={item.href as any} asChild>
+              <TouchableOpacity style={StyleSheet.flatten([styles.navItem, active && styles.navItemActive])}>
+                <SymbolView 
+                  name={item.icon} 
+                  size={20} 
+                  tintColor={active ? '#fff' : '#888'} 
+                />
+                <ThemedText style={StyleSheet.flatten([styles.navText, active && styles.navTextActive])}>
+                  {item.label}
+                </ThemedText>
+              </TouchableOpacity>
             </Link>
           );
         })}
-      </View>
-    </ThemedView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    width: 240,
-    maxWidth: '100%',
-    paddingVertical: Spacing.four,
-    paddingHorizontal: Spacing.three,
-    gap: Spacing.four,
+  sidebar: {
+    width: 270,
+    backgroundColor: '#0d0d16',
+    borderRightWidth: 1,
+    borderRightColor: '#1F202E',
+    display: Platform.OS === 'web' ? 'flex' : 'none',
+    height: '100%',
   },
-  brand: {
-    marginHorizontal: Spacing.two,
-    marginBottom: Spacing.two,
-  },
-  nav: {
-    gap: Spacing.one,
-  },
-  link: {},
-  linkInner: {
-    width: '100%',
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.two,
-  },
-  itemContent: {
+  sidebarHeader: {
+    padding: Spacing.four,
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'nowrap',
+    gap: Spacing.three,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F202E',
+  },
+  logoCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#7C3AED',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  brandName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  brandTagline: {
+    color: '#888',
+    fontSize: 12,
+  },
+  sidebarNav: {
+    padding: Spacing.three,
     gap: Spacing.two,
   },
-  pressed: {
-    opacity: 0.7,
+  navItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: 12,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 8,
+  },
+  navItemActive: {
+    backgroundColor: '#7C3AED20',
+  },
+  navText: {
+    color: '#888',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  navTextActive: {
+    color: '#7C3AED',
+    fontWeight: '600',
   },
 });

@@ -15,10 +15,16 @@ export default function TabsLayout() {
       <ThemedView style={styles.content}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="home" />
-          <Stack.Screen name="recommendations" />
-          <Stack.Screen name="roadmap" />
-          <Stack.Screen name="community" />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="resume-analyzer" />
+          <Stack.Screen name="skill-assessment" />
+          <Stack.Screen name="skill-gap" />
+          <Stack.Screen name="job-matcher" />
+          <Stack.Screen name="roadmap" />
+          <Stack.Screen name="projects" />
+          <Stack.Screen name="interview-practice" />
+          <Stack.Screen name="github-analyzer" />
+          <Stack.Screen name="certificates" />
         </Stack>
       </ThemedView>
 
